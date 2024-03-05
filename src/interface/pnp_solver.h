@@ -15,6 +15,28 @@ enum Sampler {
 // RANSAC method
 enum Robustor { RANSAC = 1, LORANSAC = 2 };
 
+
+// PnP Option
+struct RansacPnPOption {
+    // RANSAC option
+    double max_error = 12.0;
+    double min_inlier_ratio = 0.1;
+    double confidence = 0.99999;
+    size_t min_num_trials = 1000;
+
+    // Whether to estimate the focal length.
+    bool estimate_focal_length = false;
+    size_t num_focal_length_samples = 30;
+    double min_focal_length_ratio = 0.2;
+    double max_focal_length_ratio = 5;
+
+    // Optimization option
+    int max_num_iterations = 100;
+    bool refine_focal_length = true;
+    bool refine_extra_params = false;
+};
+
+
 // Estimate the camera pose from 2D-3D correspondences and refine pose with all
 // inliers
 //
@@ -24,12 +46,9 @@ enum Robustor { RANSAC = 1, LORANSAC = 2 };
 //                       SIMPLE_RADIAL, etc.
 // @param params         The focal length, principal point, and extra
 // parameters.
+// @param options        RANSAC PnP option
 // @param qvec           Quaternion (qw, qx, qy, qz) from world to camera
 // @param tvec           Translation (x, y, z) from world to camera
-// @param error_thres    RANSAC max error thres
-// @param inlier_ratio   RANSAC min inlier ratio
-// @param confidence     RANSAC confidence
-// @param max_iter       RANSAC max iteration
 // @param mask           Inlier mask
 // @param robustor       RANSAC(with p3p) or LORANSAC(p3p and epnp)
 // @param sampler        RANSAC sampling method: RANDOM, WEIGHT
@@ -40,10 +59,11 @@ enum Robustor { RANSAC = 1, LORANSAC = 2 };
 bool sovle_pnp_ransac(const std::vector<Eigen::Vector2d> &points2D,
                       const std::vector<Eigen::Vector3d> &points3D,
                       const std::string &camera_model,
-                      const std::vector<double> &params, Eigen::Vector4d &qvec,
-                      Eigen::Vector3d &tvec, size_t &num_inlier,
-                      double error_thres = 8.0, double inlier_ratio = 0.1,
-                      double confidence = 0.99, size_t max_iter = 10000,
+                      const RansacPnPOption& options, 
+                      std::vector<double> &params,
+                      Eigen::Vector4d &qvec,
+                      Eigen::Vector3d &tvec, 
+                      size_t &num_inlier,
                       std::vector<char> *mask = nullptr,
                       Robustor robustor = RANSAC,
                       Sampler sampler = RANDOM_SAMPLE,

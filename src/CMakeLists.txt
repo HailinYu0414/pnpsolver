@@ -53,45 +53,68 @@ aux_source_directory(optim optim_src)
 
 aux_source_directory(util util_src)
 
-add_library(${LIBRARY_NAME}
-    ${base_src}
-    ${interface_src}
-    ${estimators_src}
-    ${optim_src}
-    ${util_src})
-set_target_properties(${LIBRARY_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-add_library(PnpSolver::pnpsolver ALIAS ${LIBRARY_NAME})
+aux_source_directory(python python_src)
 
-if(TARGET ceres)
-    target_link_libraries(${LIBRARY_NAME} PUBLIC ceres)
+set(pnpsolver_src ${base_src}
+                  ${interface_src}
+                  ${estimators_src}
+                  ${optim_src}
+                  ${util_src})
+
+if (BUILD_PYTHON)
+    list(APPEND pnpsolver_src ${python_src})
+    find_package(pybind11 CONFIG REQUIRED)
+    pybind11_add_module(pypose ${pnpsolver_src})
+    target_link_libraries(pypose  PRIVATE ${Boost_LIBRARIES})
+
+    if(TARGET ceres)
+        target_link_libraries(pypose PUBLIC ceres)
+    else()
+        target_link_libraries(pypose PUBLIC Ceres::ceres)
+    endif()
+
+    if(TARGET Eigen3::Eigen)
+        target_link_libraries(pypose PUBLIC Eigen3::Eigen)
+    else()
+        target_include_directories(pypose PUBLIC ${EIGEN3_INCLUDE_DIRS})
+    endif()
+
 else()
-    target_link_libraries(${LIBRARY_NAME} PUBLIC Ceres::ceres)
+    add_library(${LIBRARY_NAME} ${pnpsolver_src})
+    set_target_properties(${LIBRARY_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    add_library(PnpSolver::pnpsolver ALIAS ${LIBRARY_NAME})
+
+    if(TARGET ceres)
+        target_link_libraries(${LIBRARY_NAME} PUBLIC ceres)
+    else()
+        target_link_libraries(${LIBRARY_NAME} PUBLIC Ceres::ceres)
+    endif()
+
+    if(TARGET Eigen3::Eigen)
+        target_link_libraries(${LIBRARY_NAME} PUBLIC Eigen3::Eigen)
+    else()
+        target_include_directories(${LIBRARY_NAME} PUBLIC ${EIGEN3_INCLUDE_DIRS})
+    endif()
+
+    target_include_directories(${LIBRARY_NAME} PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/interface>
+        $<INSTALL_INTERFACE:include/>
+    )
+
+    install(TARGETS ${LIBRARY_NAME} DESTINATION lib EXPORT ${LIBRARY_NAME}-targets)
+    install(FILES ${PROJECT_SOURCE_DIR}/src/interface/pnp_solver.h DESTINATION include)
+
+    install(EXPORT ${LIBRARY_NAME}-targets DESTINATION lib/cmake NAMESPACE PnpSolver::)
+
+    include(CMakePackageConfigHelpers)
+    configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/PnpSolverConfig.cmake.in
+        "${CMAKE_CURRENT_BINARY_DIR}/PnpSolverConfig.cmake"
+        INSTALL_DESTINATION lib/cmake/
+        NO_CHECK_REQUIRED_COMPONENTS_MACRO
+    )
+
+    install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/PnpSolverConfig.cmake"
+        DESTINATION lib/cmake
+    )
 endif()
-
-if(TARGET Eigen3::Eigen)
-    target_link_libraries(${LIBRARY_NAME} PUBLIC Eigen3::Eigen)
-else()
-    target_include_directories(${LIBRARY_NAME} PUBLIC ${EIGEN3_INCLUDE_DIRS})
-endif()
-
-target_include_directories(${LIBRARY_NAME} PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/interface>
-    $<INSTALL_INTERFACE:include/>
-)
-
-install(TARGETS ${LIBRARY_NAME} DESTINATION lib EXPORT ${LIBRARY_NAME}-targets)
-install(FILES ${PROJECT_SOURCE_DIR}/src/interface/pnp_solver.h DESTINATION include)
-
-install(EXPORT ${LIBRARY_NAME}-targets DESTINATION lib/cmake NAMESPACE PnpSolver::)
-
-include(CMakePackageConfigHelpers)
-configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/PnpSolverConfig.cmake.in
-    "${CMAKE_CURRENT_BINARY_DIR}/PnpSolverConfig.cmake"
-    INSTALL_DESTINATION lib/cmake/
-    NO_CHECK_REQUIRED_COMPONENTS_MACRO
-)
-
-install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/PnpSolverConfig.cmake"
-    DESTINATION lib/cmake
-)

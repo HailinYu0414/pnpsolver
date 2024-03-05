@@ -1,0 +1,9 @@
+LICENSE
+README.md
+setup.py
+pypose.egg-info/PKG-INFO
+pypose.egg-info/SOURCES.txt
+pypose.egg-info/dependency_links.txt
+pypose.egg-info/not-zip-safe
+pypose.egg-info/requires.txt
+pypose.egg-info/top_level.txt

@@ -61,10 +61,11 @@ int main(int argc, char** argv) {
         Eigen::Vector4d qvec;
         Eigen::Vector3d tvec;
         std::vector<char> mask;
-
         size_t num_inliers = 0;
-        if (sovle_pnp_ransac(points2D, points3D, model_name, params, qvec, tvec,
-                             num_inliers, 8.0, 0.1, 0.9999, 1000, &mask,
+
+        colpnp::RansacPnPOption options;
+        if (sovle_pnp_ransac(points2D, points3D, model_name, params, 
+                             options, qvec, tvec, num_inliers, &mask,
                              colpnp::LORANSAC, colpnp::WEIGHT_SAMPLE,
                              &priors)) {
             std::cout << "Inlier: " << num_inliers << std::endl;
