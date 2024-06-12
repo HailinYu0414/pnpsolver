@@ -39,7 +39,6 @@
 
 #include "optim/random_sampler.h"
 #include "optim/support_measurement.h"
-#include "util/alignment.h"
 
 namespace colmap {
 

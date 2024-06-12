@@ -34,6 +34,9 @@
 #include "base/polynomial.h"
 #include "estimators/utils.h"
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
 namespace colmap {
 namespace {
 
